@@ -1,88 +1,77 @@
 import React, {Component} from 'react';
+import Positions from "../../components/Positions/Positions"
+import CartList from "../../components/CartList/CartList"
+import {connect} from "react-redux";
 
+import {addPosition, clearCart, closeModal, fetchPosition} from "../../store/action/ffBuilderAction";
+import Modal from "../../components/UI/Modal/Modal";
+import ContactData from "../ContactData/ContactData";
 
-
-const POSITIONS = [
-    {name: 'Hamburger', image: hamburgerImage},
-    {name: 'Cheeseburger', image: cheeseburgerImage},
-    {name: 'Fries', image: friesImage},
-    {name: 'Coffee', image: coffeeImage},
-    {name: 'Tea', image: teaImage},
-    {name: 'Cola', image: colaImage}
-];
 
 class FastFoodBuilder extends Component {
-    state = {
-        initialText: 'Order is empty! Please add some items!',
-        totalPrice: 0,
-        usedPositions: [],
-        positions: [
-            {name: 'Hamburger', count: 0, price: 110},
-            {name: 'Cheeseburger', count: 0, price: 120},
-            {name: 'Fries', count: 0, price: 45},
-            {name: 'Coffee', count: 0, price: 70},
-            {name: 'Tea', count: 0, price: 20},
-            {name: 'Cola', count: 0, price: 35}
-        ]
+    componentDidMount() {
+        this.props.fetchPosition();
+    }
+
+    clickHandler = key => {
+        const position = {
+            name: this.props.positions[key].name,
+            price: this.props.positions[key].price,
+        };
+        this.props.addPosition(position)
     };
 
-    addElement = (index) => {
-        let positions = [...this.state.positions];
-        let position = positions[index];
-        position.count++;
-        let totalPrice = this.state.totalPrice + position.price;
-        positions[index] = position;
-        let usedPositions = [...this.state.usedPositions];
-        if (!usedPositions.includes(position)) {
-            usedPositions.push(position);
-        }
-        let initialText = ' ';
-        this.setState({totalPrice, positions, usedPositions, initialText});
-    };
-
-    removeElement = (index) => {
-        let usedPositions = [...this.state.usedPositions];
-        let usedPosition = usedPositions[index];
-        if (usedPosition.count > 1) {
-            usedPosition.count--;
-            let totalPrice = this.state.totalPrice - usedPosition.price;
-            usedPositions[index] = usedPosition;
-            this.setState({totalPrice, usedPositions});
-        } else {
-            usedPositions.splice(index, 1);
-            let totalPrice = this.state.totalPrice - usedPosition.price;
-            let initialText = 'Order is empty! Please add some items!';
-            this.setState({totalPrice, usedPositions, initialText});
-        }
-    };
 
     render() {
+        const positions = Object.keys(this.props.positions).map(posKey => (
+            <Positions
+                key={posKey}
+                name={this.props.positions[posKey].name}
+                image={this.props.positions[posKey].image}
+                price={this.props.positions[posKey].price}
+                onClick={() => this.clickHandler(posKey)}
+            />
+        ));
         return (
             <div>
                 <h4 className="MenuItem">Menu</h4>
                 <div className="Menu">
-                    {POSITIONS.map((pos, key) =>
-                        <Positions
-                            key={key}
-                            image={pos.image}
-                            name={pos.name}
-                            price={this.state.positions[key].price}
-                            onClick={() => this.addElement(key)}
-                        />
-                    )}
+                    {positions}
                 </div>
-                <h4 className="MenuItem">Order list</h4>
-                <div className="OrderWrap">
-                    <Order
-                        initialText = {this.state.initialText}
-                        usedPositions={this.state.usedPositions}
-                        total={this.state.totalPrice}
-                        remove={this.removeElement}
+                <h4 className="MenuItem">Cart list</h4>
+                <div className="CartWrap">
+                    <CartList/>
+                </div>
+                <Modal
+                    show={this.props.purchasing}
+                    close={this.props.purchaseCancel}
+                >
+                    <ContactData
+                        close={this.props.purchaseCancel}
+                        clearCart={this.props.clearCart}
                     />
-                </div>
+                </Modal>
             </div>
         );
     }
 }
 
-export default FastFoodBuilder;
+const mapStateToProps = state => {
+    return {
+        positions: state.ff.positions,
+        totalPrice: state.ff.totalPrice,
+        purchasing: state.ff.purchasing,
+        cart: state.ff.cart
+    };
+};
+
+const mapDispatchToProps = dispatch => {
+    return {
+        addPosition: position => dispatch(addPosition(position)),
+        fetchPosition: () => dispatch(fetchPosition()),
+        purchaseCancel: () => dispatch(closeModal()),
+        clearCart: () => dispatch(clearCart())
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(FastFoodBuilder);
