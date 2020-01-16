@@ -6,7 +6,7 @@ const Positions = props => {
     return (
         <div className="Position">
             <div>
-                <img src={props.image} alt=""/>
+                <img src={props.image} alt={props.name}/>
                 <p>{props.name}</p>
                 <p><b>Price: </b>{props.price} kgs</p>
                 <button onClick={props.onClick}>Add to cart</button>
